@@ -1,6 +1,10 @@
 package gdd
 
-import "net/http"
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+)
 
 type Context struct {
 	RespWriter http.ResponseWriter
@@ -14,10 +18,59 @@ func new(writer http.ResponseWriter, request *http.Request) *Context {
 	}
 }
 
-func (c *Context) Query(param string) string {
+/**
+获取参数
+*/
+
+func (c *Context) QueryValue(param string) string {
 	return c.Request.URL.Query().Get(param)
 }
 
-func (c *Context) JSON() {
+func (c *Context) PostFormValue(param string) string {
+	return c.Request.PostFormValue(param)
+}
 
+func (c *Context) FormValue(param string) string {
+	return c.Request.FormValue(param)
+}
+
+func (c *Context) Body(data interface{}) interface{} {
+	//获取参数
+	jsonDecoder := json.NewDecoder(c.Request.Body)
+	err := jsonDecoder.Decode(data)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(ERR("请求失败").SetStatus(http.StatusBadRequest))
+		return nil
+	}
+	return data
+}
+
+func (c *Context) FormFile(fileParam string) {
+	//file, header, err := c.Request.FormFile(fileParam)
+	//if err != nil {
+	//	fmt.Println(err)
+	//	c.Body("file error")
+	//	return
+	//}
+	//fmt.Println(header.Filename)
+	//var bytes []byte
+	//count, err := file.Read(bytes)
+	//fmt.Println(count)
+	//ioutil.WriteFile("filename.png", bytes, 0644)
+}
+
+/**
+封装响应
+*/
+
+func (c *Context) JSON(data interface{}) {
+	c.RespWriter.Header().Set("content-type", "application/json")
+	encoder := json.NewEncoder(c.RespWriter)
+	apiResponse := OK(data)
+	encoder.Encode(apiResponse)
+}
+
+func (c *Context) TEXT(text string) {
+	c.RespWriter.Write([]byte(text))
 }

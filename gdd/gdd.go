@@ -40,7 +40,11 @@ func (e *Engine) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 }
 
 func (e *Engine) GET(pattern string, handler HandlerFunc) {
-	e.addRoute("GET", pattern, handler)
+	e.addRoute(http.MethodGet, pattern, handler)
+}
+
+func (e *Engine) POST(pattern string, handler HandlerFunc) {
+	e.addRoute(http.MethodPost, pattern, handler)
 }
 
 func (e *Engine) addRoute(method, pattern string, handler HandlerFunc) {
