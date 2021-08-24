@@ -3,6 +3,8 @@ package gdd
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -34,30 +36,39 @@ func (c *Context) FormValue(param string) string {
 	return c.Request.FormValue(param)
 }
 
-func (c *Context) Body(data interface{}) interface{} {
+func (c *Context) Body(data interface{}) error {
 	//获取参数
 	jsonDecoder := json.NewDecoder(c.Request.Body)
 	err := jsonDecoder.Decode(data)
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(ERR("请求失败").SetStatus(http.StatusBadRequest))
-		return nil
+		return err
 	}
-	return data
+	return nil
 }
 
 func (c *Context) FormFile(fileParam string) {
-	//file, header, err := c.Request.FormFile(fileParam)
-	//if err != nil {
-	//	fmt.Println(err)
-	//	c.Body("file error")
-	//	return
-	//}
-	//fmt.Println(header.Filename)
-	//var bytes []byte
-	//count, err := file.Read(bytes)
-	//fmt.Println(count)
-	//ioutil.WriteFile("filename.png", bytes, 0644)
+	file, header, err := c.Request.FormFile(fileParam)
+	if err != nil {
+		fmt.Println(err)
+		c.Body("file error")
+		return
+	}
+
+	all, err := io.ReadAll(file)
+	if err != nil {
+		fmt.Println(all)
+		c.Body("file error")
+		return
+	}
+	fmt.Println("file name: ", header.Filename)
+	err = ioutil.WriteFile("filename.png", all, 0644)
+	if err != nil {
+		fmt.Println(err)
+		c.Body("file error")
+		return
+	}
 }
 
 /**

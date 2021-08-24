@@ -8,7 +8,7 @@ import (
 type HandlerFunc func(c *Context)
 
 type Engine struct {
-	routers map[string]HandlerFunc
+	routerGroups RouterGroup
 }
 
 func (e *Engine) Run(addr string) {
@@ -21,8 +21,18 @@ func (e *Engine) Run(addr string) {
 
 func New() *Engine {
 	return &Engine{
-		routers: make(map[string]HandlerFunc),
+		routerGroups: RouterGroup{
+			Group:  map[string]string{},
+			Router: map[string]HandlerFunc{},
+		},
 	}
+}
+
+func (e *Engine) Group(prefix string) *RouterGroup {
+	e.routerGroups.NewGroup(prefix)
+	e.routerGroups.Engine = e
+	return &e.routerGroups
+
 }
 
 func (e *Engine) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
@@ -30,7 +40,7 @@ func (e *Engine) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	method := request.Method
 	key := fmt.Sprintf("%s:%s", method, path)
 
-	if handler, ok := e.routers[key]; ok {
+	if handler, ok := e.routerGroups.Router[key]; ok {
 		context := new(writer, request)
 		handler(context)
 		return
@@ -49,5 +59,5 @@ func (e *Engine) POST(pattern string, handler HandlerFunc) {
 
 func (e *Engine) addRoute(method, pattern string, handler HandlerFunc) {
 	key := fmt.Sprintf("%s:%s", method, pattern)
-	e.routers[key] = handler
+	e.routerGroups.Router[key] = handler
 }
